@@ -6,25 +6,27 @@ import warnings
 st.set_page_config(page_title="LDC Document Auditor Ultra", page_icon="🚢", layout="wide")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# --- CONFIGURATION ---
+# --- 1. CONFIGURATION ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
 except:
     st.error("API Key belum disetting di Secrets!")
 
-def get_active_model():
-    # Fungsi ini akan mengecek model mana yang tersedia di akunmu
+def get_dynamic_model():
+    """Mencari model terbaru yang tersedia secara otomatis"""
     try:
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Cari Pro dulu, kalau gak ada baru Flash
-        for m in available_models:
-            if '1.5-pro' in m: return m
-        for m in available_models:
-            if '1.5-flash' in m: return m
-        return 'models/gemini-1.5-flash' # Default terakhir
-    except:
-        return 'models/gemini-1.5-flash'
+        # Mengambil daftar model yang didukung akunmu
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                # Prioritas: Cari yang ada kata 'pro', jika tidak ada pakai apa saja yang tersedia
+                if 'pro' in m.name:
+                    return m.name
+        # Jika tidak ada 'pro', ambil model pertama yang tersedia
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        return models[0] if models else "models/gemini-1.5-flash"
+    except Exception as e:
+        return "models/gemini-1.5-flash"
 
 def extract_pdf_hybrid(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
@@ -37,13 +39,13 @@ def extract_pdf_hybrid(pdf_file):
         image_parts.append({"mime_type": "image/jpeg", "data": img_data})
     return image_parts, extracted_text
 
-# --- UI ---
-st.title("🚢 LDC Auditor - Multi-Model Precision")
+# --- 2. UI ---
+st.title("🚢 LDC Auditor - Auto-Model Sync")
 
 with st.sidebar:
     st.header("Instruksi Khusus")
     notes = st.text_area("Tambahkan catatan tambahan:", height=150)
-    st.info("Sistem akan otomatis memilih model AI terbaik yang tersedia untuk akunmu.")
+    st.info("Sistem akan mendeteksi model AI terbaru dari Google secara otomatis.")
 
 uploaded_files = st.file_uploader("Upload PDF Dokumen Ekspor", type=['pdf'], accept_multiple_files=True)
 
@@ -51,16 +53,17 @@ if st.button("JALANKAN AUDIT SEKARANG", type="primary"):
     if not uploaded_files:
         st.error("Upload file dulu ya!")
     else:
-        with st.status("Sedang memilih model AI dan menganalisa...", expanded=True) as status:
+        with st.status("Sedang sinkronisasi dengan server Google...", expanded=True) as status:
             try:
-                # Memilih model secara otomatis (Anti-Error 404)
-                target_model = get_active_model()
-                st.write(f"🤖 Menggunakan model: {target_model}")
+                # MENCARI MODEL SECARA OTOMATIS
+                target_model = get_dynamic_model()
+                st.write(f"✅ Terkoneksi ke: **{target_model}**")
+                
                 model = genai.GenerativeModel(target_model)
                 
                 prompt_parts = [
                     "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
-                    "PERHATIAN: Gunakan TEKS ASLI sebagai acuan utama jika gambarnya kurang jelas (Jangan sampai SOO terbaca SOH).\n"
+                    "PERHATIAN: Gunakan TEKS ASLI sebagai acuan utama jika gambarnya kurang jelas.\n"
                     "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
                     "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
                     "   PT. LDC TRADING INDONESIA\n"
