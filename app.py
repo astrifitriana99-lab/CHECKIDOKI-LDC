@@ -14,31 +14,36 @@ except:
     st.error("API Key belum disetting di Secrets!")
 
 def get_active_model():
-    return 'gemini-1.5-pro'
+    # Fungsi ini akan mengecek model mana yang tersedia di akunmu
+    try:
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Cari Pro dulu, kalau gak ada baru Flash
+        for m in available_models:
+            if '1.5-pro' in m: return m
+        for m in available_models:
+            if '1.5-flash' in m: return m
+        return 'models/gemini-1.5-flash' # Default terakhir
+    except:
+        return 'models/gemini-1.5-flash'
 
 def extract_pdf_hybrid(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
     image_parts = []
     extracted_text = ""
-    
     for page in doc:
-        # 1. SEDOT TEKS DIGITAL ASLI (Akurasi 100% untuk PDF Sistem)
         extracted_text += page.get_text("text") + "\n"
-        
-        # 2. AMBIL GAMBARNYA (Untuk melihat posisi dan layout tabel)
         pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0)) 
         img_data = pix.tobytes("jpg")
         image_parts.append({"mime_type": "image/jpeg", "data": img_data})
-        
     return image_parts, extracted_text
 
 # --- UI ---
-st.title("🚢 LDC Auditor - Ultra Precision Mode")
+st.title("🚢 LDC Auditor - Multi-Model Precision")
 
 with st.sidebar:
     st.header("Instruksi Khusus")
     notes = st.text_area("Tambahkan catatan tambahan:", height=150)
-    st.success("Mode Hybrid aktif: AI membaca Layout (Gambar) + Karakter Asli (Teks) secara bersamaan.")
+    st.info("Sistem akan otomatis memilih model AI terbaik yang tersedia untuk akunmu.")
 
 uploaded_files = st.file_uploader("Upload PDF Dokumen Ekspor", type=['pdf'], accept_multiple_files=True)
 
@@ -46,14 +51,16 @@ if st.button("JALANKAN AUDIT SEKARANG", type="primary"):
     if not uploaded_files:
         st.error("Upload file dulu ya!")
     else:
-        with st.status("AI sedang mengekstrak teks asli dan menganalisa dokumen...", expanded=True) as status:
+        with st.status("Sedang memilih model AI dan menganalisa...", expanded=True) as status:
             try:
-                model = genai.GenerativeModel(get_active_model())
+                # Memilih model secara otomatis (Anti-Error 404)
+                target_model = get_active_model()
+                st.write(f"🤖 Menggunakan model: {target_model}")
+                model = genai.GenerativeModel(target_model)
                 
                 prompt_parts = [
                     "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
-                    "PERHATIAN: Saya melampirkan teks asli dari dokumen DAN gambar layoutnya. "
-                    "Gunakan TEKS ASLI sebagai acuan utama jika gambarnya kurang jelas (Jangan sampai SOO terbaca SOH).\n"
+                    "PERHATIAN: Gunakan TEKS ASLI sebagai acuan utama jika gambarnya kurang jelas (Jangan sampai SOO terbaca SOH).\n"
                     "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
                     "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
                     "   PT. LDC TRADING INDONESIA\n"
@@ -73,20 +80,16 @@ if st.button("JALANKAN AUDIT SEKARANG", type="primary"):
                 ]
 
                 for uploaded_file in uploaded_files:
-                    st.write(f"🔍 Mengekstrak Hybrid: {uploaded_file.name}")
-                    
-                    # Kita masukkan gambar DAN teks aslinya ke AI
                     img_parts, raw_text = extract_pdf_hybrid(uploaded_file)
-                    
-                    prompt_parts.append(f"\n--- TEKS DIGITAL ASLI DARI FILE: {uploaded_file.name} ---\n")
-                    prompt_parts.append(raw_text)
-                    prompt_parts.append(f"\n--- GAMBAR LAYOUT DARI FILE: {uploaded_file.name} ---\n")
+                    prompt_parts.append(f"\n--- DATA DARI FILE: {uploaded_file.name} ---\n")
+                    prompt_parts.append(f"TEKS DIGITAL:\n{raw_text}")
                     prompt_parts.extend(img_parts)
 
                 response = model.generate_content(prompt_parts)
                 
-                status.update(label="Analisa Selesai!", state="complete", expanded=False)
+                status.update(label="Audit Selesai!", state="complete", expanded=False)
+                st.markdown("### 📋 Laporan Hasil Audit")
                 st.markdown(response.text)
                 
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Terjadi kesalahan teknis: {str(e)}")
