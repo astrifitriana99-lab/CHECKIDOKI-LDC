@@ -27,7 +27,7 @@ def get_active_model():
         return models[0]
     except: return 'gemini-1.5-flash'
 
-def def pdf_to_images(pdf_file):
+def pdf_to_images(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
     image_parts = []
     extracted_text = ""
