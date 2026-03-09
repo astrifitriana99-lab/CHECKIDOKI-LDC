@@ -53,8 +53,8 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                 model_name = get_active_model()
                 model = genai.GenerativeModel(model_name)
                 
-                prompt_parts = [
-                   "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
+               prompt_parts = [
+            "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
             "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
             "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
             "   PT. LDC TRADING INDONESIA\n"
@@ -70,7 +70,7 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
             "FORMAT TABEL:\n"
             "| Field | Data Master (BL) | Data Dokumen Ini | Status | Solusi |\n"
             "| :--- | :--- | :--- | :--- | :--- |\n"
-            f"CATATAN TAMBAHAN: {custom_notes}"
+            f"CATATAN TAMBAHAN: {notes}"  # <--- GANTI JADI {notes} BUKAN {custom_notes}
         ]
 
                 for uploaded_file in uploaded_files:
