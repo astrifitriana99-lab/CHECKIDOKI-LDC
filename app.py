@@ -27,14 +27,16 @@ def get_active_model():
         return models[0]
     except: return 'gemini-1.5-flash'
 
-def pdf_to_images(pdf_file):
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    images = []
-    for page in doc:
-        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0))
+deffor page in doc:
+        # 1. SEDOT TEKS DIGITAL ASLI (Akurasi 100% untuk PDF Sistem)
+        extracted_text += page.get_text("text") + "\n"
+        
+        # 2. AMBIL GAMBARNYA (Untuk melihat posisi dan layout tabel)
+        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0)) 
         img_data = pix.tobytes("jpg")
-        images.append({"mime_type": "image/jpeg", "data": img_data})
-    return images
+        image_parts.append({"mime_type": "image/jpeg", "data": img_data})
+        
+    return image_parts, extracted_text
 
 # --- UI STREAMLIT ---
 st.title("🚢 LDC Senior Auditor AI")
@@ -66,7 +68,7 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     "   JL JEND. SUDIRMAN KAV 1, KARET TENGSIN, TANAH ABANG,\n"
                     "   KOTA ADM. JAKARTA PUSAT, DKI JAKARTA, 10220, INDONESIA\n"
                     "3. DATA WAJIB AUDIT:\n"
-                    "   - SHIPPER, CONSIGNEE, loading, discharge, marking, vessel, voyage, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
+                    "   - SHIPPER, CONSIGNEE, notify, loading, discharge, marking, vessel, voyage, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
                     "4. INSTRUKSI KHUSUS:\n"
                     "   - Cek angka koma dan titik pada Weight. Beda 0.01 pun ERROR.\n"
                     "   - Pastikan nomor Container dan Seal tidak kurang atau lebih 1 digit.\n"
