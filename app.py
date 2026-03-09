@@ -27,15 +27,18 @@ def get_active_model():
         return models[0]
     except: return 'gemini-1.5-flash'
 
-def for page in doc:
-        # 1. SEDOT TEKS DIGITAL ASLI (Akurasi 100% untuk PDF Sistem)
+def extract_pdf_data(pdf_file):
+    """Mengambil teks digital dan gambar dari PDF"""
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    image_parts = []
+    extracted_text = ""
+    for page in doc:
+        # Ambil teks asli (untuk akurasi huruf O vs H)
         extracted_text += page.get_text("text") + "\n"
-        
-        # 2. AMBIL GAMBARNYA (Untuk melihat posisi dan layout tabel)
-        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0)) 
+        # Ambil gambar (untuk cek layout)
+        pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0)) 
         img_data = pix.tobytes("jpg")
         image_parts.append({"mime_type": "image/jpeg", "data": img_data})
-        
     return image_parts, extracted_text
 
 # --- UI STREAMLIT ---
