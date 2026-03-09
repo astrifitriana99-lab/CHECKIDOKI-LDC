@@ -3,14 +3,10 @@ import google.generativeai as genai
 import fitz  # PyMuPDF
 import warnings
 
-# Konfigurasi Tampilan Web
-st.set_page_config(page_title="LDC Document Auditor", page_icon="🚢", layout="wide")
-
-# Sembunyikan Warning
+st.set_page_config(page_title="LDC Document Auditor Ultra", page_icon="🚢", layout="wide")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# --- 1. SETTING API KEY ---
-# Mengambil API Key dari Streamlit Secrets
+# --- CONFIGURATION ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
@@ -18,47 +14,46 @@ except:
     st.error("API Key belum disetting di Secrets!")
 
 def get_active_model():
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        for m in models:
-            if 'gemini-1.5-pro' in m: return m
-        for m in models:
-            if 'gemini-1.5-flash' in m: return m
-        return models[0]
-    except: return 'gemini-1.5-flash'
+    return 'gemini-1.5-pro'
 
-def pdf_to_images(pdf_file):
+def extract_pdf_hybrid(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    images = []
+    image_parts = []
+    extracted_text = ""
+    
     for page in doc:
-        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0))
+        # 1. SEDOT TEKS DIGITAL ASLI (Akurasi 100% untuk PDF Sistem)
+        extracted_text += page.get_text("text") + "\n"
+        
+        # 2. AMBIL GAMBARNYA (Untuk melihat posisi dan layout tabel)
+        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0)) 
         img_data = pix.tobytes("jpg")
-        images.append({"mime_type": "image/jpeg", "data": img_data})
-    return images
+        image_parts.append({"mime_type": "image/jpeg", "data": img_data})
+        
+    return image_parts, extracted_text
 
-# --- UI STREAMLIT ---
-st.title("🚢 LDC Senior Auditor AI")
-st.markdown("Automated Export Document Verification System")
+# --- UI ---
+st.title("🚢 LDC Auditor - Ultra Precision Mode")
 
 with st.sidebar:
     st.header("Instruksi Khusus")
-    notes = st.text_area("Tambahkan catatan audit (Misal: Cek tanggal Sanitary Cert):", height=150)
-    st.info("Pastikan upload MASTER BL sebagai acuan utama.")
+    notes = st.text_area("Tambahkan catatan tambahan:", height=150)
+    st.success("Mode Hybrid aktif: AI membaca Layout (Gambar) + Karakter Asli (Teks) secara bersamaan.")
 
-uploaded_files = st.file_uploader("Upload Dokumen PDF (BL, COO, Phyto, dll)", type=['pdf'], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload PDF Dokumen Ekspor", type=['pdf'], accept_multiple_files=True)
 
-if st.button("MULAI AUDIT DOKUMEN", type="primary"):
+if st.button("JALANKAN AUDIT SEKARANG", type="primary"):
     if not uploaded_files:
-        st.error("Silakan upload minimal satu file PDF.")
+        st.error("Upload file dulu ya!")
     else:
-        with st.status("Sedang memproses dokumen...", expanded=True) as status:
+        with st.status("AI sedang mengekstrak teks asli dan menganalisa dokumen...", expanded=True) as status:
             try:
-                model_name = get_active_model()
-                model = genai.GenerativeModel(model_name)
+                model = genai.GenerativeModel(get_active_model())
                 
-                # BAGIAN INSTRUKSI (PROMPT)
                 prompt_parts = [
                     "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
+                    "PERHATIAN: Saya melampirkan teks asli dari dokumen DAN gambar layoutnya. "
+                    "Gunakan TEKS ASLI sebagai acuan utama jika gambarnya kurang jelas (Jangan sampai SOO terbaca SOH).\n"
                     "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
                     "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
                     "   PT. LDC TRADING INDONESIA\n"
@@ -78,16 +73,20 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                 ]
 
                 for uploaded_file in uploaded_files:
-                    st.write(f"📂 Membaca: {uploaded_file.name}")
-                    img_parts = pdf_to_images(uploaded_file)
+                    st.write(f"🔍 Mengekstrak Hybrid: {uploaded_file.name}")
+                    
+                    # Kita masukkan gambar DAN teks aslinya ke AI
+                    img_parts, raw_text = extract_pdf_hybrid(uploaded_file)
+                    
+                    prompt_parts.append(f"\n--- TEKS DIGITAL ASLI DARI FILE: {uploaded_file.name} ---\n")
+                    prompt_parts.append(raw_text)
+                    prompt_parts.append(f"\n--- GAMBAR LAYOUT DARI FILE: {uploaded_file.name} ---\n")
                     prompt_parts.extend(img_parts)
 
-                st.write("🤖 AI sedang menganalisa data...")
                 response = model.generate_content(prompt_parts)
                 
-                status.update(label="Audit Selesai!", state="complete", expanded=False)
-                st.markdown("### 📋 Hasil Laporan Audit")
+                status.update(label="Analisa Selesai!", state="complete", expanded=False)
                 st.markdown(response.text)
                 
             except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
+                st.error(f"Error: {e}")
