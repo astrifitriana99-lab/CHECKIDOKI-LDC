@@ -14,18 +14,16 @@ except:
     st.error("API Key belum disetting di Secrets!")
 
 def get_dynamic_model():
-    """Mencari model terbaru yang tersedia secara otomatis"""
+    """Mencari model Flash agar hemat kuota dan tidak Error 429"""
     try:
-        # Mengambil daftar model yang didukung akunmu
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                # Prioritas: Cari yang ada kata 'pro', jika tidak ada pakai apa saja yang tersedia
-                if 'pro' in m.name:
-                    return m.name
-        # Jika tidak ada 'pro', ambil model pertama yang tersedia
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        return models[0] if models else "models/gemini-1.5-flash"
-    except Exception as e:
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # KITA PRIORITASKAN FLASH (Hemat Kuota)
+        for m in available_models:
+            if '1.5-flash' in m: return m
+        for m in available_models:
+            if '2.0-flash' in m: return m
+        return available_models[0]
+    except:
         return "models/gemini-1.5-flash"
 
 def extract_pdf_hybrid(pdf_file):
