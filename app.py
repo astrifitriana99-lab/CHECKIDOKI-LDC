@@ -10,9 +10,12 @@ st.set_page_config(page_title="LDC Document Auditor", page_icon="🚢", layout="
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # --- 1. SETTING API KEY ---
-# Di Streamlit, kita simpan API Key di 'Secrets' agar aman
-API_KEY = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=API_KEY)
+# Mengambil API Key dari Streamlit Secrets
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
+except:
+    st.error("API Key belum disetting di Secrets!")
 
 def get_active_model():
     try:
@@ -53,25 +56,26 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                 model_name = get_active_model()
                 model = genai.GenerativeModel(model_name)
                 
-               prompt_parts = [
-            "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
-            "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
-            "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
-            "   PT. LDC TRADING INDONESIA\n"
-            "   GEDUNG WISMA 46 - KOTA BNI LANTAI 15 SUITE 15.01, 15.10-12\n"
-            "   JL JEND. SUDIRMAN KAV 1, KARET TENGSIN, TANAH ABANG,\n"
-            "   KOTA ADM. JAKARTA PUSAT, DKI JAKARTA, 10220, INDONESIA\n"
-            "3. DATA WAJIB AUDIT:\n"
-            "   - SHIPPER, CONSIGNEE, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
-            "4. INSTRUKSI KHUSUS:\n"
-            "   - Cek angka koma dan titik pada Weight. Beda 0.01 pun ERROR.\n"
-            "   - Pastikan nomor Container dan Seal tidak kurang atau lebih 1 digit.\n"
-            "   - Bandingkan semua dokumen pendukung terhadap MASTER BL.\n\n"
-            "FORMAT TABEL:\n"
-            "| Field | Data Master (BL) | Data Dokumen Ini | Status | Solusi |\n"
-            "| :--- | :--- | :--- | :--- | :--- |\n"
-            f"CATATAN TAMBAHAN: {notes}"  # <--- GANTI JADI {notes} BUKAN {custom_notes}
-        ]
+                # BAGIAN INSTRUKSI (PROMPT)
+                prompt_parts = [
+                    "Kamu adalah Senior Auditor Ekspor paling teliti. Tugasmu adalah Zero Tolerance Error!\n"
+                    "1. IDENTIFIKASI MASTER: File 'BL' atau 'Bill of Lading' adalah kebenaran mutlak.\n"
+                    "2. ALAMAT SHIPPER PATEN (Wajib Sama Persis):\n"
+                    "   PT. LDC TRADING INDONESIA\n"
+                    "   GEDUNG WISMA 46 - KOTA BNI LANTAI 15 SUITE 15.01, 15.10-12\n"
+                    "   JL JEND. SUDIRMAN KAV 1, KARET TENGSIN, TANAH ABANG,\n"
+                    "   KOTA ADM. JAKARTA PUSAT, DKI JAKARTA, 10220, INDONESIA\n"
+                    "3. DATA WAJIB AUDIT:\n"
+                    "   - SHIPPER, CONSIGNEE, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
+                    "4. INSTRUKSI KHUSUS:\n"
+                    "   - Cek angka koma dan titik pada Weight. Beda 0.01 pun ERROR.\n"
+                    "   - Pastikan nomor Container dan Seal tidak kurang atau lebih 1 digit.\n"
+                    "   - Bandingkan semua dokumen pendukung terhadap MASTER BL.\n\n"
+                    "FORMAT TABEL:\n"
+                    "| Field | Data Master (BL) | Data Dokumen Ini | Status | Solusi |\n"
+                    "| :--- | :--- | :--- | :--- | :--- |\n"
+                    f"CATATAN TAMBAHAN: {notes}"
+                ]
 
                 for uploaded_file in uploaded_files:
                     st.write(f"📂 Membaca: {uploaded_file.name}")
