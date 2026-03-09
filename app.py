@@ -27,7 +27,7 @@ def get_active_model():
         return models[0]
     except: return 'gemini-1.5-flash'
 
-deffor page in doc:
+def for page in doc:
         # 1. SEDOT TEKS DIGITAL ASLI (Akurasi 100% untuk PDF Sistem)
         extracted_text += page.get_text("text") + "\n"
         
