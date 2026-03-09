@@ -72,7 +72,7 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     "   JL JEND. SUDIRMAN KAV 1, KARET TENGSIN, TANAH ABANG,\n"
                     "   KOTA ADM. JAKARTA PUSAT, DKI JAKARTA, 10220, INDONESIA\n"
                     "3. DATA WAJIB AUDIT:\n"
-                    "   - SHIPPER, CONSIGNEE, notify, loading, discharge, marking, vessel, voyage, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
+                    "   - SHIPPER, CONSIGNEE, notify, loading, discharge, marking, vessel, voyage, description of goods, GROSS & NET WEIGHT, CONTAINER & SEAL NUMBER.\n"
                     "4. INSTRUKSI KHUSUS:\n"
                     "   - Cek angka koma dan titik pada Weight. Beda 0.01 pun ERROR.\n"
                     "   - Pastikan nomor Container dan Seal tidak kurang atau lebih 1 digit.\n"
