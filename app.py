@@ -84,32 +84,26 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     img_parts = pdf_to_images(uploaded_file)
                     prompt_parts.extend(img_parts)
 
-                # BARIS INI HARUS SEJAJAR DENGAN 'for' DI ATAS
-                st.write("🤖 AI sedang menganalisa data...") 
+                # Mulai analisa - Pastikan sejajar dengan 'for' di atas
+                st.write("🤖 AI sedang menganalisa data...")
 
-               try:
-                    # Mencoba ambil jawaban dari AI
+                try:
                     response = model.generate_content(prompt_parts)
                 except Exception as api_error:
-                    # Jika kena limit 429 (Quota Exceeded)
                     if "429" in str(api_error):
-                        st.warning("Kuota penuh, nunggu 10 detik ya...")
-                        time.sleep(10) 
+                        st.warning("Kuota penuh, menunggu 10 detik sebelum mencoba lagi...")
+                        time.sleep(10)
                         response = model.generate_content(prompt_parts)
                     else:
-                        # Jika errornya lain, munculkan pesan error
-                        st.error(f"Waduh, ada masalah API: {api_error}")
-                        response = None
+                        raise api_error
 
-                # Jika response berhasil didapat, tampilkan hasilnya
-                if response:
-                    status.update(label="Audit Selesai!", state="complete", expanded=False)
-                    st.markdown("### 📋 Hasil Laporan Audit")
-                    st.markdown(response.text)
-                # --- STOP COPY DI SINI ---
-
+                # Update status dan tampilkan hasil
+                status.update(label="Audit Selesai!", state="complete", expanded=False)
+                st.markdown("### 📋 Hasil Laporan Audit")
+                st.markdown(response.text)
+                
             except Exception as e:
-                st.error(f"Terjadi kesalahan sistem: {e}")
+                st.error(f"Terjadi kesalahan: {e}")
 
 status.update(label="Audit Selesai!", state="complete", expanded=False)
 st.markdown("### 📋 Hasil Laporan Audit")
