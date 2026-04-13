@@ -1,3 +1,4 @@
+import time #
 import streamlit as st
 import google.generativeai as genai
 import fitz  # PyMuPDF
@@ -17,15 +18,10 @@ try:
 except:
     st.error("API Key belum disetting di Secrets!")
 
+@st.cache_resource 
 def get_active_model():
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        for m in models:
-            if 'gemini-1.5-pro' in m: return m
-        for m in models:
-            if 'gemini-1.5-flash' in m: return m
-        return models[0]
-    except: return 'gemini-1.5-flash'
+    # Langsung return di sini, kode di bawahnya hapus saja biar gak bingung
+    return 'gemini-1.5-flash'
 
 def pdf_to_images(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
@@ -36,7 +32,7 @@ def pdf_to_images(pdf_file):
         extracted_text += page.get_text("text") + "\n"
         
         # 2. AMBIL GAMBARNYA (Untuk melihat posisi dan layout tabel)
-        pix = page.get_pixmap(matrix=fitz.Matrix(3.0, 3.0)) 
+        pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0)) 
         img_data = pix.tobytes("jpg")
         image_parts.append({"mime_type": "image/jpeg", "data": img_data})
         
@@ -88,12 +84,21 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     img_parts = pdf_to_images(uploaded_file)
                     prompt_parts.extend(img_parts)
 
-                st.write("🤖 AI sedang menganalisa data...")
-                response = model.generate_content(prompt_parts)
-                
-                status.update(label="Audit Selesai!", state="complete", expanded=False)
-                st.markdown("### 📋 Hasil Laporan Audit")
-                st.markdown(response.text)
+               st.write("🤖 AI sedang menganalisa data...")
+
+try:
+    response = model.generate_content(prompt_parts)
+except Exception as api_error:
+    if "429" in str(api_error):
+        st.warning("Kuota penuh, menunggu 10 detik sebelum mencoba lagi...")
+        time.sleep(10) # Jeda otomatis 10 detik
+        response = model.generate_content(prompt_parts)
+    else:
+        raise api_error
+
+status.update(label="Audit Selesai!", state="complete", expanded=False)
+st.markdown("### 📋 Hasil Laporan Audit")
+st.markdown(response.text)
                 
             except Exception as e:
                 st.error(f"Terjadi kesalahan: {e}")
