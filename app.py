@@ -21,22 +21,15 @@ except:
 @st.cache_resource 
 def get_active_model():
     try:
-        # AI akan otomatis mencari nama 'flash' yang paling valid di versimu
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         
-        # Prioritaskan cari model flash
+        # Prioritaskan 1.5 Flash karena kuota hariannya jauh lebih banyak
         for m in models:
             if 'gemini-1.5-flash' in m: 
                 return m 
-                
-        # Kalau flash nggak ada, cari pro
-        for m in models:
-            if 'gemini-1.5-pro' in m: 
-                return m
-                
+        
         return models[0]
     except: 
-        # Fallback cadangan
         return 'gemini-1.5-flash-latest'
 
 def pdf_to_images(pdf_file):
