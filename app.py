@@ -1,4 +1,4 @@
-import time #
+import time
 import streamlit as st
 import google.generativeai as genai
 import fitz  # PyMuPDF
@@ -20,7 +20,6 @@ except:
 
 @st.cache_resource 
 def get_active_model():
-    # Langsung return di sini, kode di bawahnya hapus saja biar gak bingung
     return 'gemini-1.5-flash'
 
 def pdf_to_images(pdf_file):
@@ -84,7 +83,6 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     img_parts = pdf_to_images(uploaded_file)
                     prompt_parts.extend(img_parts)
 
-                # Mulai analisa - Pastikan sejajar dengan 'for' di atas
                 st.write("🤖 AI sedang menganalisa data...")
 
                 try:
@@ -101,13 +99,6 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                 status.update(label="Audit Selesai!", state="complete", expanded=False)
                 st.markdown("### 📋 Hasil Laporan Audit")
                 st.markdown(response.text)
-                
-            except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
-
-status.update(label="Audit Selesai!", state="complete", expanded=False)
-st.markdown("### 📋 Hasil Laporan Audit")
-st.markdown(response.text)
                 
             except Exception as e:
                 st.error(f"Terjadi kesalahan: {e}")
