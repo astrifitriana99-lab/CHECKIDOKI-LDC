@@ -87,15 +87,29 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                 # BARIS INI HARUS SEJAJAR DENGAN 'for' DI ATAS
                 st.write("🤖 AI sedang menganalisa data...") 
 
-                try:
+               try:
+                    # Mencoba ambil jawaban dari AI
                     response = model.generate_content(prompt_parts)
                 except Exception as api_error:
+                    # Jika kena limit 429 (Quota Exceeded)
                     if "429" in str(api_error):
-                        st.warning("Kuota penuh, menunggu 10 detik...")
-                        time.sleep(10)
+                        st.warning("Kuota penuh, nunggu 10 detik ya...")
+                        time.sleep(10) 
                         response = model.generate_content(prompt_parts)
                     else:
-                        raise api_error
+                        # Jika errornya lain, munculkan pesan error
+                        st.error(f"Waduh, ada masalah API: {api_error}")
+                        response = None
+
+                # Jika response berhasil didapat, tampilkan hasilnya
+                if response:
+                    status.update(label="Audit Selesai!", state="complete", expanded=False)
+                    st.markdown("### 📋 Hasil Laporan Audit")
+                    st.markdown(response.text)
+                # --- STOP COPY DI SINI ---
+
+            except Exception as e:
+                st.error(f"Terjadi kesalahan sistem: {e}")
 
 status.update(label="Audit Selesai!", state="complete", expanded=False)
 st.markdown("### 📋 Hasil Laporan Audit")
