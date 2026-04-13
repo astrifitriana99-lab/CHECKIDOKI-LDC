@@ -84,17 +84,18 @@ if st.button("MULAI AUDIT DOKUMEN", type="primary"):
                     img_parts = pdf_to_images(uploaded_file)
                     prompt_parts.extend(img_parts)
 
-               st.write("🤖 AI sedang menganalisa data...")
+                # BARIS INI HARUS SEJAJAR DENGAN 'for' DI ATAS
+                st.write("🤖 AI sedang menganalisa data...") 
 
-try:
-    response = model.generate_content(prompt_parts)
-except Exception as api_error:
-    if "429" in str(api_error):
-        st.warning("Kuota penuh, menunggu 10 detik sebelum mencoba lagi...")
-        time.sleep(10) # Jeda otomatis 10 detik
-        response = model.generate_content(prompt_parts)
-    else:
-        raise api_error
+                try:
+                    response = model.generate_content(prompt_parts)
+                except Exception as api_error:
+                    if "429" in str(api_error):
+                        st.warning("Kuota penuh, menunggu 10 detik...")
+                        time.sleep(10)
+                        response = model.generate_content(prompt_parts)
+                    else:
+                        raise api_error
 
 status.update(label="Audit Selesai!", state="complete", expanded=False)
 st.markdown("### 📋 Hasil Laporan Audit")
